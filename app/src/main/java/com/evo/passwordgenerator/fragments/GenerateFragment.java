@@ -2,11 +2,8 @@ package com.evo.passwordgenerator.fragments;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.Loader;
 import android.text.InputType;
@@ -20,7 +17,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.evo.passwordgenerator.R;
-import com.evo.passwordgenerator.activities.SaveActivity;
 import com.evo.passwordgenerator.data.PasswordContract;
 
 import org.adw.library.widgets.discreteseekbar.DiscreteSeekBar;
@@ -28,25 +24,36 @@ import org.adw.library.widgets.discreteseekbar.DiscreteSeekBar;
 import static android.content.Context.INPUT_METHOD_SERVICE;
 
 
-public class Fragment_Alpha extends Fragment implements android.support.v4.app.LoaderManager.LoaderCallbacks<Cursor> {
+public class GenerateFragment extends Fragment implements android.support.v4.app.LoaderManager.LoaderCallbacks<Cursor> {
 
     private Context context;
-    private FloatingActionButton generateButton;
     private Button clipbutton;
     private Button clearbutton;
     private Button savebutton;
-    private int  number=0;
     private TextView generatedPassword;
     private String passwToSave;
     private DiscreteSeekBar charNumber;
 
-    public Fragment_Alpha() {
+    public int type = 0;
+    public static final String ARG_TYPE = "argType";
+
+    public GenerateFragment() {
         // Required empty public constructor
+    }
+
+    public static GenerateFragment newInstance(int type) {
+        Bundle args = new Bundle();
+        args.putInt(ARG_TYPE, type);
+
+        GenerateFragment fragment = new GenerateFragment();
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        type = getArguments().getInt(ARG_TYPE);
     }
 
     @Override
@@ -54,11 +61,9 @@ public class Fragment_Alpha extends Fragment implements android.support.v4.app.L
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_base2, container, false);
-        final View clayout = view.findViewById(R.id.clayout);
 
         generatedPassword = (EditText) view.findViewById(R.id.generatedPassword);
         generatedPassword.setMovementMethod(new ScrollingMovementMethod());
-        generateButton = (FloatingActionButton) view.findViewById(R.id.generateButton);
         clipbutton = (Button) view.findViewById(R.id.clipboard_button);
         clearbutton = (Button) view.findViewById(R.id.clear_button);
         savebutton = (Button) view.findViewById(R.id.save_button);
@@ -67,19 +72,41 @@ public class Fragment_Alpha extends Fragment implements android.support.v4.app.L
 
         generatedPassword.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 
-        generateButton.setOnClickListener(new View.OnClickListener() {
+        charNumber.setOnProgressChangeListener(new DiscreteSeekBar.OnProgressChangeListener() {
             @Override
-            public void onClick(View v) {
-                    number = charNumber.getProgress();
-                    Pass_Alpha pword = new Pass_Alpha(number);
-                    passwToSave = pword.randomChar(context);
-                    generatedPassword.setText(passwToSave);
-                    number = 0;
+            public void onProgressChanged(DiscreteSeekBar seekBar, int value, boolean fromUser) {
+                switch (type) {
+                    case 0: {
+                        Pass_Alpha pword = new Pass_Alpha(value);
+                        passwToSave = pword.randomChar(context);
+                        break;
+                    }
+                    case 1: {
+                        Pass_Num pword = new Pass_Num(value);
+                        passwToSave = pword.randomChar(context);
+                        break;
+                    }
+                    case 2: {
+                        Pass_AlphaNumSym pword = new Pass_AlphaNumSym(value);
+                        passwToSave = pword.randomChar(context);
+                        break;
+                    }
+                }
+                generatedPassword.setText(passwToSave);
+                savebutton.setEnabled(true);
+                savebutton.setText(R.string.save_text);
+            }
 
+            @Override
+            public void onStartTrackingTouch(DiscreteSeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(DiscreteSeekBar seekBar) {
 
             }
         });
-
 
         clipbutton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,23 +115,9 @@ public class Fragment_Alpha extends Fragment implements android.support.v4.app.L
                     android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
                     android.content.ClipData clip = android.content.ClipData.newPlainText("Text Label", generatedPassword.getText().toString());
                     clipboard.setPrimaryClip(clip);
-                    Snackbar snackbarCB = Snackbar.make(clayout, getString(R.string.clipboard), Snackbar.LENGTH_LONG)
-                            .setAction(android.R.string.ok, new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                }
-                            });
-                    snackbarCB.setActionTextColor(getResources().getColor(R.color.colorAccent));
-                    snackbarCB.show();
+                    // TODO: show snackbar
                 } else {
-                    Snackbar snackbarCBf = Snackbar.make(clayout, getString(R.string.clipboard_empty), Snackbar.LENGTH_LONG)
-                            .setAction(android.R.string.ok, new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                }
-                            });
-                    snackbarCBf.setActionTextColor(getResources().getColor(R.color.colorAccent));
-                    snackbarCBf.show();
+                    // TODO: show nothing to show snackbar
                 }
             }
         });
@@ -116,16 +129,8 @@ public class Fragment_Alpha extends Fragment implements android.support.v4.app.L
                     charNumber.setProgress(1);
                     generatedPassword.setText("");
                     hide();
-                } else {
-                    Snackbar snackbarCB = Snackbar.make(clayout, getString(R.string.valuesnackbarcb), Snackbar.LENGTH_LONG)
-                            .setAction(android.R.string.ok, new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                }
-                            });
-                    snackbarCB.setActionTextColor(getResources().getColor(R.color.colorAccent));
-                    snackbarCB.show();
-
+                    savebutton.setEnabled(true);
+                    savebutton.setText(R.string.save_text);
                 }
             }
         });
@@ -142,17 +147,8 @@ public class Fragment_Alpha extends Fragment implements android.support.v4.app.L
 
                     getActivity().getContentResolver().insert(PasswordContract.PasswordEntry.CONTENT_URI, values);
 
-                    // TODO: Change text here to what you want
-                    Snackbar snackbarSave = Snackbar.make(clayout, "Password saved!", Snackbar.LENGTH_LONG)
-                            .setAction("Saved", new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    Intent i = new Intent(getActivity().getApplicationContext(), SaveActivity.class);
-                                    startActivity(i);
-                                }
-                            });
-                    snackbarSave.setActionTextColor(getResources().getColor(R.color.colorAccent));
-                    snackbarSave.show();
+                    savebutton.setEnabled(false);
+                    savebutton.setText(R.string.saved_text);
                 }
             }
         });

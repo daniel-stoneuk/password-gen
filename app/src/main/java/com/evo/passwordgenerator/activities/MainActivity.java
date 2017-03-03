@@ -5,30 +5,38 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.afollestad.materialdialogs.internal.ThemeSingleton;
 import com.evo.passwordgenerator.R;
+import com.evo.passwordgenerator.data.PasswordContract;
 import com.evo.passwordgenerator.dialogs.ChangelogDialog;
-import com.evo.passwordgenerator.fragments.Fragment_Alpha;
-import com.evo.passwordgenerator.fragments.Fragment_AlphaNumSym;
-import com.evo.passwordgenerator.fragments.Fragment_Num;
+import com.evo.passwordgenerator.fragments.GenerateFragment;
+import com.evo.passwordgenerator.items.SaveItem;
+import com.mikepenz.fastadapter.commons.adapters.FastItemAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
 
     private Toolbar toolbar;
@@ -41,6 +49,17 @@ public class MainActivity extends AppCompatActivity {
             R.drawable.tab_num_selector,
             R.drawable.tab_alphanumsym_selector
     };
+
+    public static final int LOADER_ID = 100;
+
+    public static final String[] SAVE_COLUMNS = {
+            PasswordContract.PasswordEntry._ID,
+            PasswordContract.PasswordEntry.COLUMN_PASSWORD,
+    };
+    public static final int COL_ID = 0;
+    public static final int COL_PASSWORD = 1;
+
+    FastItemAdapter fastItemAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,8 +82,43 @@ public class MainActivity extends AppCompatActivity {
 
         init();
 
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.save_recyclerview);
+
+        fastItemAdapter = new FastItemAdapter();
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(fastItemAdapter);
+
+        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
+
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Uri uri = PasswordContract.PasswordEntry.CONTENT_URI;
+
+        return new CursorLoader(this,
+                uri,
+                SAVE_COLUMNS,
+                null,
+                null,
+                null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
+        if (c != null) {
+            fastItemAdapter.clear();
+            for (int i = (c.getCount()) - 1; i >= 0; i--) {
+                c.moveToPosition(i);
+                fastItemAdapter.add(new SaveItem(c.getLong(COL_ID), c.getString(COL_PASSWORD)));
+            }
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+    }
 
 
     private void setupTabIcons() {
@@ -75,9 +129,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new Fragment_Alpha());
-        adapter.addFragment(new Fragment_Num());
-        adapter.addFragment(new Fragment_AlphaNumSym());
+        adapter.addFragment(GenerateFragment.newInstance(0));
+        adapter.addFragment(GenerateFragment.newInstance(1));
+        adapter.addFragment(GenerateFragment.newInstance(2));
         viewPager.setAdapter(adapter);
     }
 
@@ -116,12 +170,13 @@ public class MainActivity extends AppCompatActivity {
         try {
             PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
             currentVersionNumber = pi.versionCode;
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
 
         if (currentVersionNumber > savedVersionNumber) {
             showChangelog();
 
-            SharedPreferences.Editor editor   = sharedPref.edit();
+            SharedPreferences.Editor editor = sharedPref.edit();
 
             editor.putInt(VERSION_KEY, currentVersionNumber);
             editor.commit();

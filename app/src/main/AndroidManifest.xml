@@ -4,7 +4,6 @@
 
     <application
         android:allowBackup="true"
-        android:debuggable="true"
         android:fitsSystemWindows="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -37,15 +36,6 @@
             android:authorities="com.evo.passwordgenerator"
             android:exported="false" />
 
-        <activity
-            android:name=".activities.SaveActivity"
-            android:label="@string/title_activity_save"
-            android:parentActivityName=".activities.MainActivity"
-            android:theme="@style/AppTheme">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.evo.passwordgenerator.activities.MainActivity" />
-        </activity>
     </application>
 
 </manifest>

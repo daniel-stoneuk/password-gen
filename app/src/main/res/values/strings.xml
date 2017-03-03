@@ -8,6 +8,7 @@
     <string name="copy_to_clipboard">Copy</string>
     <string name="clear_text">Clear</string>
     <string name="save_text">Save</string>
+    <string name="saved_text">Saved</string>
 
     //Main Activity (MainActivity.class)
     <string name="valuesnackbarnc">Please enter a value</string>
